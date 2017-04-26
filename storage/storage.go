@@ -22,6 +22,21 @@ func (s StoreObject) String() string {
 	return s.Name
 }
 
+// Equal test the equality of 2 store objects based
+// on only available (non-zero) fields
+func (s StoreObject) Equal(other StoreObject) bool {
+	if s.Directory != other.Directory {
+		return false
+	}
+	if !s.Modified.IsZero() && !other.Modified.IsZero() && s.Modified != other.Modified {
+		//return false
+	}
+	if s.Size != 0 && other.Size != 0 && s.Size != other.Size {
+		return false
+	}
+	return s.Name == other.Name
+}
+
 type sortAlphabetical []StoreObject
 
 func (n sortAlphabetical) Len() int           { return len(n) }

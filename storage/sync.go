@@ -54,7 +54,7 @@ func GetTree(s Storage, me StoreObject, path string) (Node, error) {
 
 // DiffTree returns the different tree of nodes that are in n1 but not in n2
 func DiffTree(n1, n2 Node) Node {
-	if n1.StoreObject != n2.StoreObject {
+	if !n1.StoreObject.Equal(n2.StoreObject) {
 		return n1
 	}
 	sort.Sort(sortNodeAlphabetical(n1.Children))
@@ -106,6 +106,7 @@ func Sync(src Storage, srcRoot string, dst Storage, dstRoot string) error {
 	diff := DiffTree(srcTree, dstTree)
 	if diff.IsZero() { // Nothing to do
 		fmt.Println("Directories are in sync")
+		return nil
 	}
 	var dfsWalk func(n Node, srcPath, dstPath string) error
 	dfsWalk = func(n Node, srcPath, dstPath string) error {
