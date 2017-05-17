@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -95,10 +96,10 @@ func (l *LocalStorage) List(relative string) ([]StoreObject, error) {
 	nodes := make([]StoreObject, len(listing))
 	for i, l := range listing {
 		nodes[i] = StoreObject{
-			Directory: l.IsDir(),
-			Modified:  l.ModTime(),
-			Name:      l.Name(),
-			Size:      int(l.Size()),
+			IsDirectory: l.IsDir(),
+			Modified:    l.ModTime(),
+			Name:        l.Name(),
+			Size:        int(l.Size()),
 		}
 	}
 	return nodes, nil
@@ -140,12 +141,43 @@ func (l *LocalStorage) Remove(path string) error {
 	return os.Remove(abs)
 }
 
+// fileWithModTimeCloser implements io.WriteCloser with an underlying *os.File
+// The only difference is on Close, it will call ModTime on the file too
+type fileWithModTimeCloser struct {
+	closed   bool
+	filePath string
+	file     *os.File
+	modTime  time.Time
+}
+
+func (f *fileWithModTimeCloser) Write(p []byte) (n int, err error) {
+	return f.file.Write(p)
+}
+
+func (f *fileWithModTimeCloser) Close() error {
+	if f.closed { // Already closed
+		return nil
+	}
+	err := f.file.Close()
+	err2 := os.Chtimes(f.filePath, time.Now(), f.modTime)
+	f.closed = true
+	if err != nil {
+		return err
+	}
+	return err2
+}
+
 // Upload returns an object that can be written to. It will create the
 // file if it doesn't already exist. If it exists, it will overrides it
-func (l *LocalStorage) Upload(path string) (io.WriteCloser, error) {
+func (l *LocalStorage) Upload(path string, modTime time.Time) (io.WriteCloser, error) {
 	abs := filepath.Join(l.Root, filepath.FromSlash(path))
 	if !l.inRoot(abs) {
 		return nil, ErrNotInRoot
 	}
-	return os.OpenFile(abs, os.O_RDWR|os.O_CREATE, defaultPerms)
+	f, err := os.OpenFile(abs, os.O_RDWR|os.O_CREATE, defaultPerms)
+	return &fileWithModTimeCloser{
+		filePath: abs,
+		file:     f,
+		modTime:  modTime,
+	}, err
 }

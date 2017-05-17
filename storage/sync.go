@@ -8,18 +8,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Node represents a tree node for StoreObjects
-type Node struct {
+// SyncNode represents a tree node for StoreObjects
+type SyncNode struct {
 	StoreObject
-	Children []Node
+	Children []SyncNode
 }
 
 // IsZero returns whether node is empty
-func (n Node) IsZero() bool {
+func (n SyncNode) IsZero() bool {
 	return n.StoreObject.IsZero() && len(n.Children) == 0
 }
 
-type sortNodeAlphabetical []Node
+type sortNodeAlphabetical []SyncNode
 
 func (n sortNodeAlphabetical) Len() int           { return len(n) }
 func (n sortNodeAlphabetical) Less(i, j int) bool { return n[i].Name < n[j].Name }
@@ -27,39 +27,39 @@ func (n sortNodeAlphabetical) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
 
 // GetTree do a BFS search to generate a tree starting at root
 // and generates a listing of all the nodes
-func GetTree(s Storage, me StoreObject, path string) (Node, error) {
+func GetTree(s Storage, me StoreObject, path string) (SyncNode, error) {
 	listing, err := s.List(path)
 	if err != nil {
-		return Node{}, errors.Wrap(err, "failed to get tree")
+		return SyncNode{}, errors.Wrap(err, "failed to get tree")
 	}
 
-	children := make([]Node, len(listing))
+	children := make([]SyncNode, len(listing))
 	for i, l := range listing {
-		if l.Directory {
+		if l.IsDirectory {
 			node, localErr := GetTree(s, l, path+"/"+l.Name)
 			if err == nil && localErr != nil {
 				err = localErr
 			}
 			children[i] = node
 		} else {
-			node := Node{StoreObject: l}
+			node := SyncNode{StoreObject: l}
 			children[i] = node
 		}
 	}
-	return Node{
+	return SyncNode{
 		StoreObject: me,
 		Children:    children,
 	}, err
 }
 
 // DiffTree returns the different tree of nodes that are in n1 but not in n2
-func DiffTree(n1, n2 Node) Node {
+func DiffTree(n1, n2 SyncNode) SyncNode {
 	if !n1.StoreObject.Equal(n2.StoreObject) {
 		return n1
 	}
 	sort.Sort(sortNodeAlphabetical(n1.Children))
 	sort.Sort(sortNodeAlphabetical(n2.Children))
-	changedChildren := make([]Node, 0, len(n1.Children))
+	changedChildren := make([]SyncNode, 0, len(n1.Children))
 
 	for i, n1Child := range n1.Children {
 		if i >= len(n2.Children) {
@@ -73,9 +73,9 @@ func DiffTree(n1, n2 Node) Node {
 	}
 
 	if len(changedChildren) == 0 {
-		return Node{}
+		return SyncNode{}
 	}
-	return Node{
+	return SyncNode{
 		StoreObject: n1.StoreObject,
 		Children:    changedChildren,
 	}
@@ -88,11 +88,11 @@ func Sync(src Storage, srcRoot string, dst Storage, dstRoot string) error {
 	srcRootObj := StoreObject{}
 	// ToDo: Cleaner error check
 	if _, err := src.List(srcRoot); err == nil {
-		srcRootObj.Directory = true
+		srcRootObj.IsDirectory = true
 	}
 	dstRootObj := StoreObject{}
 	if _, err := dst.List(dstRoot); err == nil {
-		dstRootObj.Directory = true
+		dstRootObj.IsDirectory = true
 	}
 
 	srcTree, err := GetTree(src, srcRootObj, srcRoot)
@@ -108,17 +108,17 @@ func Sync(src Storage, srcRoot string, dst Storage, dstRoot string) error {
 		fmt.Println("Directories are in sync")
 		return nil
 	}
-	var dfsWalk func(n Node, srcPath, dstPath string) error
-	dfsWalk = func(n Node, srcPath, dstPath string) error {
+	var dfsWalk func(n SyncNode, srcPath, dstPath string) error
+	dfsWalk = func(n SyncNode, srcPath, dstPath string) error {
 		srcPath = srcPath + "/" + n.Name
 		dstPath = dstPath + "/" + n.Name
-		if !n.Directory {
+		if !n.IsDirectory {
 			srcFile, err := src.Download(srcPath)
 			if err != nil {
 				return errors.Wrap(err, "failed to open "+srcPath)
 			}
 			defer srcFile.Close()
-			dstFile, err := dst.Upload(dstPath)
+			dstFile, err := dst.Upload(dstPath, n.Modified)
 			if err != nil {
 				return errors.Wrap(err, "failed to open "+dstPath)
 			}

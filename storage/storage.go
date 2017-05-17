@@ -7,10 +7,10 @@ import (
 
 // StoreObject defines an object in the storage. Name is relative to current path
 type StoreObject struct {
-	Directory bool
-	Modified  time.Time
-	Name      string
-	Size      int
+	IsDirectory bool
+	Modified    time.Time
+	Name        string
+	Size        int
 }
 
 // IsZero returns whether StoreObject is an empty object
@@ -25,11 +25,11 @@ func (s StoreObject) String() string {
 // Equal test the equality of 2 store objects based
 // on only available (non-zero) fields
 func (s StoreObject) Equal(other StoreObject) bool {
-	if s.Directory != other.Directory {
+	if s.IsDirectory != other.IsDirectory {
 		return false
 	}
 	if !s.Modified.IsZero() && !other.Modified.IsZero() && s.Modified != other.Modified {
-		//return false
+		return false
 	}
 	if s.Size != 0 && other.Size != 0 && s.Size != other.Size {
 		return false
@@ -51,5 +51,5 @@ type Storage interface {
 	Mkdir(path string) error
 	Move(src, dst string) error
 	Remove(path string) error
-	Upload(path string) (io.WriteCloser, error)
+	Upload(path string, modTime time.Time) (io.WriteCloser, error) // At close, it should set modtime
 }
