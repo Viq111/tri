@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"fmt"
 	"io"
-	"sort"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/pkg/errors"
 )
@@ -18,12 +18,9 @@ type SyncNode struct {
 func (n SyncNode) IsZero() bool {
 	return n.StoreObject.IsZero() && len(n.Children) == 0
 }
-
-type sortNodeAlphabetical []SyncNode
-
-func (n sortNodeAlphabetical) Len() int           { return len(n) }
-func (n sortNodeAlphabetical) Less(i, j int) bool { return n[i].Name < n[j].Name }
-func (n sortNodeAlphabetical) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
+func (n SyncNode) String() string {
+	return n.StoreObject.String()
+}
 
 // GetTree do a BFS search to generate a tree starting at root
 // and generates a listing of all the nodes
@@ -57,18 +54,21 @@ func DiffTree(n1, n2 SyncNode) SyncNode {
 	if !n1.StoreObject.Equal(n2.StoreObject) {
 		return n1
 	}
-	sort.Sort(sortNodeAlphabetical(n1.Children))
-	sort.Sort(sortNodeAlphabetical(n2.Children))
+	children2 := make(map[string]SyncNode, len(n2.Children))
+	for _, c := range n2.Children {
+		children2[c.Name] = c
+	}
+
 	changedChildren := make([]SyncNode, 0, len(n1.Children))
 
-	for i, n1Child := range n1.Children {
-		if i >= len(n2.Children) {
+	for _, n1Child := range n1.Children {
+		if n2Child, ok := children2[n1Child.Name]; ok {
+			n := DiffTree(n1Child, n2Child)
+			if !n.IsZero() {
+				changedChildren = append(changedChildren, n)
+			}
+		} else {
 			changedChildren = append(changedChildren, n1Child)
-			continue
-		}
-		n := DiffTree(n1Child, n2.Children[i])
-		if !n.IsZero() {
-			changedChildren = append(changedChildren, n)
 		}
 	}
 
@@ -105,7 +105,7 @@ func Sync(src Storage, srcRoot string, dst Storage, dstRoot string) error {
 	}
 	diff := DiffTree(srcTree, dstTree)
 	if diff.IsZero() { // Nothing to do
-		fmt.Println("Directories are in sync")
+		log.Info("Directories are in sync")
 		return nil
 	}
 	var dfsWalk func(n SyncNode, srcPath, dstPath string) error
@@ -113,6 +113,7 @@ func Sync(src Storage, srcRoot string, dst Storage, dstRoot string) error {
 		srcPath = srcPath + "/" + n.Name
 		dstPath = dstPath + "/" + n.Name
 		if !n.IsDirectory {
+			log.Infof("Copying %s", dstPath)
 			srcFile, err := src.Download(srcPath)
 			if err != nil {
 				return errors.Wrap(err, "failed to open "+srcPath)
