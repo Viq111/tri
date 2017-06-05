@@ -29,6 +29,16 @@ type StorageTester interface {
 	GetStorage() Storage
 }
 
+var storageTestGlobal StorageTester
+
+func init() {
+	s, c, err := getLocalStorageAndCleanup()
+	if err != nil {
+		panic(err)
+	}
+	storageTestGlobal = NewStorageTester(s, c)
+}
+
 type STester struct {
 	cleanup func() error
 	s       Storage

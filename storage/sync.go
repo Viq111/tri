@@ -8,6 +8,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+type sortAlphabeticalSyncNode []SyncNode
+
+func (n sortAlphabeticalSyncNode) Len() int           { return len(n) }
+func (n sortAlphabeticalSyncNode) Less(i, j int) bool { return n[i].Name < n[j].Name }
+func (n sortAlphabeticalSyncNode) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
+
 // SyncNode represents a tree node for StoreObjects
 type SyncNode struct {
 	StoreObject
@@ -81,7 +87,7 @@ func DiffTree(n1, n2 SyncNode) SyncNode {
 	}
 }
 
-// Sync copies everythign from src to dst. If there are more things in dst,
+// Sync copies everything from src to dst. If there are more things in dst,
 // move them to the Bin
 // Bin -> ToDo
 func Sync(src Storage, srcRoot string, dst Storage, dstRoot string) error {

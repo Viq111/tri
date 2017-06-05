@@ -6,15 +6,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLocalStorage(t *testing.T) {
-	assert := assert.New(t)
-
+func getLocalStorageAndCleanup() (Storage, func() error, error) {
 	root, err := ioutil.TempDir("", "tri_local_test_")
-	if !assert.NoError(err, "failed to create temp directory") {
-		t.FailNow()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to create temp directory")
 	}
 
 	cleanupTestPath := func() error {
@@ -29,7 +28,7 @@ func TestLocalStorage(t *testing.T) {
 
 		/*
 			/
-			/folder_a/file_a
+			/file_a
 			/folder_a/folder_b/file_b
 			/folder_a/folder_empty
 			/folder_empty
@@ -59,14 +58,24 @@ func TestLocalStorage(t *testing.T) {
 		f2.Close()
 		return nil
 	}
-
 	err = cleanupTestPath()
-	if !assert.NoError(err, "failed to init directory dir") {
-		t.FailNow()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to init directory")
 	}
 
 	localStorage, err := NewLocalStorage(root)
-	if !assert.NoError(err, "failed to create local storage") {
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to create local storage")
+	}
+
+	return localStorage, cleanupTestPath, nil
+}
+
+func TestLocalStorage(t *testing.T) {
+	assert := assert.New(t)
+
+	localStorage, cleanupTestPath, err := getLocalStorageAndCleanup()
+	if !assert.NoError(err, "failed to get storage") {
 		t.FailNow()
 	}
 
