@@ -23,17 +23,17 @@ func TestSyncGetTree(t *testing.T) {
 	assert.Equal("folder_empty", tree.Children[2].Name)
 	assert.Equal(true, tree.Children[2].IsDirectory)
 
-	folder_a := tree.Children[1]
-	sort.Sort(sortAlphabeticalSyncNode(folder_a.Children))
-	assert.Equal("folder_b", folder_a.Children[0].Name)
-	assert.Equal(true, folder_a.Children[0].IsDirectory)
-	assert.Equal("folder_empty", folder_a.Children[1].Name)
-	assert.Equal(true, folder_a.Children[1].IsDirectory)
+	folderA := tree.Children[1]
+	sort.Sort(sortAlphabeticalSyncNode(folderA.Children))
+	assert.Equal("folder_b", folderA.Children[0].Name)
+	assert.Equal(true, folderA.Children[0].IsDirectory)
+	assert.Equal("folder_empty", folderA.Children[1].Name)
+	assert.Equal(true, folderA.Children[1].IsDirectory)
 
-	assert.Len(folder_a.Children[0].Children, 1)
-	assert.Equal("file_b", folder_a.Children[0].Children[0].Name)
-	assert.Equal(false, folder_a.Children[0].Children[0].IsDirectory)
-	assert.Len(folder_a.Children[1].Children, 0)
+	assert.Len(folderA.Children[0].Children, 1)
+	assert.Equal("file_b", folderA.Children[0].Children[0].Name)
+	assert.Equal(false, folderA.Children[0].Children[0].IsDirectory)
+	assert.Len(folderA.Children[1].Children, 0)
 }
 
 func TestSyncDiffTree(t *testing.T) {

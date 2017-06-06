@@ -11,9 +11,9 @@ import (
 )
 
 func getLocalStorageAndCleanup() (Storage, func() error, error) {
-	root, err := ioutil.TempDir("", "tri_local_test_")
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create temp directory")
+	root, err2 := ioutil.TempDir("", "tri_local_test_")
+	if err2 != nil {
+		return nil, nil, errors.Wrap(err2, "failed to create temp directory")
 	}
 
 	cleanupTestPath := func() error {
@@ -51,21 +51,21 @@ func getLocalStorageAndCleanup() (Storage, func() error, error) {
 			return err
 		}
 		f.Close()
-		f2, err2 := os.OpenFile(filepath.Join(root, "folder_a", "folder_b", "file_b"), os.O_RDWR|os.O_CREATE, 0644)
-		if err2 != nil {
-			return err2
+		f2, err := os.OpenFile(filepath.Join(root, "folder_a", "folder_b", "file_b"), os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			return err
 		}
 		f2.Close()
 		return nil
 	}
-	err = cleanupTestPath()
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to init directory")
+	err2 = cleanupTestPath()
+	if err2 != nil {
+		return nil, nil, errors.Wrap(err2, "failed to init directory")
 	}
 
-	localStorage, err := NewLocalStorage(root)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create local storage")
+	localStorage, err2 := NewLocalStorage(root)
+	if err2 != nil {
+		return nil, nil, errors.Wrap(err2, "failed to create local storage")
 	}
 
 	return localStorage, cleanupTestPath, nil
