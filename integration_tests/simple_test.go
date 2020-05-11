@@ -7,9 +7,9 @@ import (
 	"testing"
 )
 
-func fatalOnError(t *testing.T, err error) {
+func fatalOnError(t *testing.T, err error, msg []byte) {
 	if err != nil {
-		t.Fatalf("Failed: %s", err)
+		t.Fatalf("Failed: err=%s, msg=%s", err, msg)
 	}
 }
 
@@ -28,10 +28,10 @@ func TestSimple(t *testing.T) {
 		tf := NewLocalTestFolder(t)
 		defer tf.Cleanup()
 		in, out := tf.GetInputOutputDir()
-		_, err := exec.Command("git", "clone", "https://github.com/Viq111/iqredisio.git", in).CombinedOutput()
-		fatalOnError(t, err)
-		_, err = exec.Command("tri", "sync", in, out).CombinedOutput()
-		fatalOnError(t, err)
+		stdout, err := exec.Command("git", "clone", "https://github.com/Viq111/iqredisio.git", in).CombinedOutput()
+		fatalOnError(t, err, stdout)
+		stdout, err = exec.Command("tri", "sync", in, out).CombinedOutput()
+		fatalOnError(t, err, stdout)
 		// Compare
 		tf.DirectoriesEqual()
 	})
