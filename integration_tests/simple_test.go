@@ -29,9 +29,13 @@ func TestSimple(t *testing.T) {
 		defer tf.Cleanup()
 		in, out := tf.GetInputOutputDir()
 		stdout, err := exec.Command("git", "clone", "https://github.com/Viq111/iqredisio.git", in).CombinedOutput()
-		fatalOnError(t, err, stdout)
+		if err != nil {
+			t.Fatalf("Failed to git clone: err=%s, msg=%s", err, stdout)
+		}
 		stdout, err = exec.Command("tri", "sync", in, out).CombinedOutput()
-		fatalOnError(t, err, stdout)
+		if err != nil {
+			t.Fatalf("Failed to invoke tri: err=%s, msg=%s", err, stdout)
+		}
 		// Compare
 		tf.DirectoriesEqual()
 	})

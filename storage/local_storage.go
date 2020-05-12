@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	defaultPerms = 0644
+	defaultPerms          = 0660
+	defaultDirectoryPerms = 0770
 )
 
 // Defines exported errors
@@ -111,7 +112,7 @@ func (l *LocalStorage) Mkdir(relative string) error {
 	if !l.inRoot(abs) {
 		return ErrNotInRoot
 	}
-	return os.MkdirAll(abs, defaultPerms)
+	return os.MkdirAll(abs, defaultDirectoryPerms)
 }
 
 // Move moves a file to a new location, this can only move files and not folders
