@@ -34,7 +34,7 @@ func TestSimple(t *testing.T) {
 		}
 		stdout, err = exec.Command("tri", "sync", in, out).CombinedOutput()
 		if err != nil {
-			t.Fatalf("Failed to git clone: err=%s, msg=%s", err, stdout)
+			t.Fatalf("Failed to invoke tri: err=%s, msg=%s", err, stdout)
 		}
 		// Compare
 		tf.DirectoriesEqual()
