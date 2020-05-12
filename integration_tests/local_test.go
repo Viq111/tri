@@ -33,12 +33,12 @@ func NewLocalTestFolder(t *testing.T) *LocalTest {
 	}
 	// Create 2 subdirs
 	in := filepath.Join(root, "input")
-	err = os.Mkdir(in, 0660)
+	err = os.Mkdir(in, 0776)
 	if err != nil {
 		t.Fatalf("Failed to create subdirectory: %s", err)
 	}
 	out := filepath.Join(root, "output")
-	err = os.Mkdir(out, 0660)
+	err = os.Mkdir(out, 0776)
 	if err != nil {
 		t.Fatalf("Failed to create subdirectory: %s", err)
 	}
